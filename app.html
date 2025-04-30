@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku Multi-Tape Turing Machine Simulator</title>
+<style>
+    :root {
+    --primary-color: #3498db;
+    --primary-dark: #2980b9;
+    --accent-color: #e74c3c;
+    --light-bg: #f8f9fa;
+    --dark-bg: #343a40;
+    --box-color: #333;
+    --grid-line: #d4d4d4;
+    --fixed-bg: #e3f2fd;
+    --filled-bg: #c8e6c9;
+    --head-bg: #ffccbc;
+    --transition-speed: 0.3s;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    color: #333;
+    background-color: #fafafa;
+}
+
+h1, h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: var(--dark-bg);
+}
+
+h1 {
+    position: relative;
+    padding-bottom: 12px;
+}
+
+h1:after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 3px;
+    background-color: var(--primary-color);
+    border-radius: 2px;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.top-section {
+    display: flex;
+    gap: 25px;
+}
+
+.grid-section {
+    flex: 1;
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+}
+
+.state-diagram {
+    flex: 1;
+    border: none;
+    padding: 20px;
+    border-radius: 8px;
+    background-color: white;
+    height: 400px;
+    overflow: auto;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+}
+
+.sudoku-grid {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    grid-template-rows: repeat(9, 1fr);
+    gap: 1px;
+    border: 2px solid var(--box-color);
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    max-width: 500px;
+    margin: 0 auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    background-color: white;
+    border: 1px solid var(--grid-line);
+    cursor: default;
+    position: relative;
+    transition: all var(--transition-speed);
+    height: 100%;
+}
+
+.cell.fixed {
+    background-color: var(--fixed-bg);
+    font-weight: bold;
+    color: var(--primary-dark);
+}
+
+.cell.filled {
+    background-color: var(--filled-bg);
+    color: #37474f;
+}
+
+.cell.current-head {
+    background-color: var(--head-bg);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+}
+
+/* Box borders */
+.cell:nth-child(3n) {
+    border-right: 2px solid var(--box-color);
+}
+
+.cell:nth-child(9n) {
+    border-right: none;
+}
+
+.sudoku-grid > .cell:nth-child(n+19):nth-child(-n+27),
+.sudoku-grid > .cell:nth-child(n+46):nth-child(-n+54) {
+    border-bottom: 2px solid var(--box-color);
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 20px 0;
+    padding: 15px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+button {
+    padding: 10px 18px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+button:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+#step-button {
+    background-color: #4CAF50;
+}
+
+#step-button:hover {
+    background-color: #388E3C;
+}
+
+#run-button {
+    background-color: #FF9800;
+}
+
+#run-button:hover {
+    background-color: #F57C00;
+}
+
+#reset-button {
+    background-color: #F44336;
+}
+
+#reset-button:hover {
+    background-color: #D32F2F;
+}
+
+#solve-button {
+    background-color: #9C27B0;
+}
+
+#solve-button:hover {
+    background-color: #7B1FA2;
+}
+
+.status {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 3px solid var(--primary-color);
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+}
+
+.status > div {
+    flex: 1;
+    min-width: 0; /* Allows text to truncate if needed */
+    white-space: nowrap; /* Prevents text wrapping within each div */
+    overflow: hidden;
+    text-overflow: ellipsis; /* Shows "..." if text is too long */
+    padding-right: 10px; /* Add some space between columns */
+}
+
+/* If you want to ensure specific widths */
+.status > div:nth-child(1) { flex: 0 0 25%; }
+.status > div:nth-child(2) { flex: 0 0 25%; }
+.status > div:nth-child(3) { flex: 0 0 50%; } /* Debug info gets more space */
+.status div {
+    margin-bottom: 5px;
+}
+
+.status strong {
+    color: var(--primary-dark);
+    margin-right: 5px;
+}
+
+.speed-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+}
+
+.speed-control label {
+    font-weight: 500;
+    color: var(--dark-bg);
+}
+
+input[type="range"] {
+    -webkit-appearance: none;
+    width: 150px;
+    height: 6px;
+    background: #d3d3d3;
+    border-radius: 5px;
+    outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    background: var(--primary-dark);
+    transform: scale(1.2);
+}
+
+.tapes {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+    font-family: 'Courier New', monospace;
+}
+
+.tapes strong {
+    color: var(--primary-dark);
+    display: block;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.puzzle-selector {
+    margin-bottom: 20px;
+    text-align: center;
+    background-color: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+}
+
+.puzzle-selector label {
+    font-weight: 500;
+    margin-right: 10px;
+    color: var(--dark-bg);
+}
+
+select {
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    background-color: white;
+    margin-right: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+select:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.25);
+}
+
+/* State diagram styling */
+.state-node {
+    fill: var(--light-bg);
+    stroke: var(--primary-color);
+    stroke-width: 2px;
+    transition: all 0.3s;
+}
+
+.current-state {
+    fill: #ffe082;
+    stroke: #ffa000;
+    filter: drop-shadow(0 0 5px rgba(255, 160, 0, 0.5));
+}
+
+.state-text {
+    text-anchor: middle;
+    font-size: 14px;
+    font-weight: bold;
+    font-family: 'Segoe UI', sans-serif;
+    user-select: none;
+}
+
+.state-edge {
+    stroke: #666;
+    stroke-width: 2px;
+    fill: none;
+    marker-end: url(#arrowhead);
+}
+
+.state-arrow {
+    fill: #666;
+}
+
+.edge-text {
+    text-anchor: middle;
+    font-size: 12px;
+    fill: #555;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* Main tape styling */
+.main-tape-container {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+    overflow-x: auto;
+}
+
+.main-tape-container h2 {
+    margin-top: 0;
+}
+
+.main-tape {
+    display: flex;
+    min-height: 60px;
+    padding: 10px 0;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.tape-cell {
+    min-width: 50px;
+    height: 50px;
+    border: 1px solid var(--grid-line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-family: 'Courier New', monospace;
+    position: relative;
+    background-color: white;
+    transition: all var(--transition-speed);
+    margin-right: -1px;
+}
+
+.tape-cell.current-head {
+    background-color: var(--head-bg);
+    box-shadow: 0 0 0 2px var(--accent-color);
+    z-index: 2;
+}
+
+.tape-cell.fixed {
+    background-color: var(--fixed-bg);
+    font-weight: bold;
+}
+
+.tape-cell.filled {
+    background-color: var(--filled-bg);
+}
+
+.tape-head-indicator {
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--accent-color);
+    font-weight: bold;
+}
+
+.tape-position {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: #666;
+}
+
+@media (max-width: 768px) {
+    .top-section {
+        flex-direction: column;
+    }
+    
+    .status {
+        grid-template-columns: 1fr;
+    }
+    
+    .controls {
+        flex-direction: column;
+    }
+    
+    .main-tape {
+        justify-content: flex-start;
+    }
+}
+    </style>
+</head>
+<body>
+    <h1>Sudoku Multi-Tape Turing Machine Simulator</h1>
+    
+    <div class="puzzle-selector">
+        <label for="puzzle-select">Select Puzzle: </label>
+        <select id="puzzle-select">
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+            <option value="expert">Expert</option>
+        </select>
+        <button id="load-button">Load Puzzle</button>
+    </div>
+
+    <div class="container">
+        <div class="top-section">
+            <div class="grid-section">
+                <h2>Sudoku Grid</h2>
+                <div class="sudoku-grid" id="sudoku-grid"></div>
+            </div>
+            
+            <div class="state-diagram">
+                <h2>Turing Machine State Diagram</h2>
+                <svg width="100%" height="360" id="state-diagram-svg">
+                    <!-- State diagram will be rendered here -->
+                </svg>
+            </div>
+        </div>
+       
+        <div class="status" id="tm-status">
+            <div><strong>State:</strong> <span id="tm-state">scan</span></div>
+            <div><strong>Head Position:</strong> <span id="head-pos">0</span></div>
+            <div><strong>Debug Info:</strong> <span id="debug-info">Ready</span></div>
+        </div>
+        <div class="tapes" id="bt-tapes">
+            <strong>Backtracking Tapes:</strong> Empty
+        </div>
+        
+        <div class="controls">
+            <button id="step-button">Step</button>
+            <button id="run-button">Run</button>
+            <button id="reset-button">Reset</button>
+            <button id="solve-button">Solve Immediately</button>
+            
+            <div class="speed-control">
+                <label for="speed-slider">Speed:</label>
+                <input type="range" id="speed-slider" min="0" max="100" value="50">
+            </div>
+        </div>
+        
+        <!-- Main tape will be added dynamically via JavaScript -->
+        
+        
+    </div>
+
+    <script>
+        // Multi-tape Sudoku Turing Machine Implementation
+        // A Turing Machine implementation for 9x9 Sudoku with multi-tape approach
+class SudokuTuringMachine {
+    constructor() {
+        this.mainTape = [];      // Tape 1: The main tape represents our grid in linear form
+        this.fixedTape = [];     // Tape 2: Tracks original values (fixed cells)
+        this.btPosTape = [];     // Tape 3: Backtracking positions tape
+        this.btValTape = [];     // Tape 4: Backtracking values tape
+        this.headPos = 0;        // Current position of the read/write head on main tape
+        this.btHeadPos = 0;      // Head position for backtracking tapes
+        this.state = "scan";     // Current state of the machine
+        this.hasHalted = false;
+        this.debugInfo = "";
+        this.gridSize = 9;       // Grid size (9x9)
+        this.boxSize = 3;        // Box size (3x3)
+    }
+    
+    setTape(values) {
+        // Initialize the tapes with values
+        this.mainTape = [...values];
+        this.fixedTape = [...values];  // Track which cells were originally filled
+        this.btPosTape = [];     // Clear backtracking position tape
+        this.btValTape = [];     // Clear backtracking value tape
+        this.headPos = 0;        // Reset main head position
+        this.btHeadPos = 0;      // Reset backtracking head position
+        this.state = "scan";
+        this.hasHalted = false;
+    }
+    
+    readMainTape() {
+        // Read value from main tape at current head position
+        if (0 <= this.headPos && this.headPos < this.mainTape.length) {
+            return this.mainTape[this.headPos];
+        }
+        return null;
+    }
+    
+    writeMainTape(value) {
+        // Write value to main tape at current head position
+        if (0 <= this.headPos && this.headPos < this.mainTape.length) {
+            this.mainTape[this.headPos] = value;
+        }
+    }
+    
+    readFixedTape() {
+        // Read value from fixed tape at current head position
+        if (0 <= this.headPos && this.headPos < this.fixedTape.length) {
+            return this.fixedTape[this.headPos];
+        }
+        return null;
+    }
+    
+    writeBtTapes(position, value) {
+        // Write to backtracking tapes
+        this.btPosTape.push(position);
+        this.btValTape.push(value);
+        this.btHeadPos = this.btPosTape.length - 1;
+    }
+    
+    readBtTapes() {
+        // Read from backtracking tapes at current bt_head_pos
+        if (0 <= this.btHeadPos && this.btHeadPos < this.btPosTape.length) {
+            return [this.btPosTape[this.btHeadPos], this.btValTape[this.btHeadPos]];
+        }
+        return [null, null];
+    }
+    
+    moveBtHeadLeft() {
+        // Move backtracking head left (pop from tapes)
+        if (this.btHeadPos >= 0) {
+            const [pos, val] = this.readBtTapes();
+            // Remove the last entry from both tapes
+            if (this.btPosTape.length > 0) {
+                this.btPosTape.pop();
+                this.btValTape.pop();
+            }
+            this.btHeadPos = this.btPosTape.length - 1;
+            return [pos, val];
+        }
+        return [null, null];
+    }
+    
+    backtrack() {
+        // Backtrack using the backtracking tapes
+        while (this.btHeadPos >= 0) {
+            // Read the current entry
+            const [pos, val] = this.readBtTapes();
+            
+            // Remove this entry
+            this.moveBtHeadLeft();
+            
+            // If this was a try_value state at this position
+            if (pos === this.headPos) {
+                // We've already tried this value, continue backtracking
+                this.debugInfo = `Already tried ${val} at position ${pos}, continuing backtrack`;
+                continue;
+            }
+                
+            // If this was a try_value state for a previous position
+            if (pos < this.headPos) {
+                // Clear all cells from this position forward that weren't fixed
+                for (let i = pos; i < this.mainTape.length; i++) {
+                    if (this.fixedTape[i] === 0) {  // Only clear cells that weren't fixed
+                        this.mainTape[i] = 0;
+                    }
+                }
+                
+                // Move head to the previous trial position
+                this.headPos = pos;
+                this.state = "try_value";
+                
+                // Get next value to try at this position (val + 1)
+                const nextVal = val + 1;
+                
+                // If we've exhausted all values at this position, continue backtracking
+                if (nextVal > 9) {
+                    this.debugInfo = `Tried all values at position ${pos}, continuing backtrack`;
+                    continue;
+                }
+                    
+                // Otherwise, push new state to try next value
+                this.writeBtTapes(pos, nextVal);
+                this.debugInfo = `Backtracked to position ${pos}, will try ${nextVal} next`;
+                return true;
+            }
+        }
+        
+        // If we've exhausted all possibilities, no solution exists
+        this.hasHalted = true;
+        this.state = "reject";
+        this.debugInfo = "No solution exists after complete backtracking";
+        return false;
+    }
+
+    step() {
+        // Execute one step of the TM
+        if (this.hasHalted) {
+            return false;
+        }
+        
+        // Ensure head is within bounds
+        if (this.headPos < 0) {
+            // If we need to backtrack beyond the beginning, no solution exists
+            this.hasHalted = true;
+            this.state = "reject";
+            this.debugInfo = "No solution exists: backtracked beyond start";
+            return false;
+        } else if (this.headPos >= this.mainTape.length) {
+            // Reached the end - we've solved it!
+            this.state = "accept";
+            this.hasHalted = true;
+            this.debugInfo = "Solution found!";
+            return true;
+        }
+        
+        const currentSymbol = this.readMainTape();
+        const originalValue = this.readFixedTape();
+        
+        // TM logic based on current state and symbol
+        if (this.state === "scan") {
+            if (originalValue !== 0) {
+                // Skip cells that were originally filled
+                this.headPos += 1;
+                this.debugInfo = `Position ${this.headPos-1} has fixed value ${originalValue}, moving ahead`;
+                return true;
+            } else if (currentSymbol === 0) {
+                // Found an empty cell, transition to try_value state
+                this.state = "try_value";
+                // Try with value 1 initially
+                this.writeBtTapes(this.headPos, 1);
+                this.debugInfo = `Found empty cell at position ${this.headPos}, trying values`;
+                return true;
+            } else {
+                // Current cell has a value we tried before, move to next cell
+                this.headPos += 1;
+                this.debugInfo = `Cell at position ${this.headPos-1} already has value ${currentSymbol}, moving ahead`;
+                return true;
+            }
+        } else if (this.state === "try_value") {
+            // Get the value to try from our backtracking tapes
+            const [pos, valToTry] = this.readBtTapes();
+            
+            // Convert position to grid coordinates
+            const row = Math.floor(this.headPos / this.gridSize);
+            const col = this.headPos % this.gridSize;
+            const grid = this.toGrid();
+            
+            if (this.isValidPlacement(grid, row, col, valToTry)) {
+                // Place the value and move to next cell
+                this.writeMainTape(valToTry);
+                this.headPos += 1;
+                this.state = "scan";
+                this.debugInfo = `Placed ${valToTry} at position ${this.headPos-1}, moving ahead`;
+                return true;
+            } else {
+                // Value not valid
+                const nextVal = valToTry + 1;
+                
+                if (nextVal > 9) {
+                    // We've tried all values, need to backtrack
+                    this.debugInfo = `No valid value for position ${this.headPos}, backtracking`;
+                    return this.backtrack();
+                } else {
+                    // Try next value - remove current value and add next value
+                    this.moveBtHeadLeft();  // Remove current trial
+                    this.writeBtTapes(this.headPos, nextVal);  // Add next trial
+                    this.debugInfo = `Value ${valToTry} invalid at pos ${this.headPos}, trying ${nextVal} next`;
+                    return true;
+                }
+            }
+        }
+        
+        // Default - should never reach here
+        this.hasHalted = true;
+        this.debugInfo = `Error: Unknown state ${this.state}`;
+        return false;
+    }
+
+    runToCompletion(maxSteps = 1000000000) {
+        // Run the TM until halted or max_steps reached
+        let steps = 0;
+        const startTime = performance.now();
+        let progressShown = false;
+        
+        while (!this.hasHalted && steps < maxSteps) {
+            this.step();
+            steps += 1;
+            
+            // Show periodic progress
+            if (steps % 10000 === 0) {
+                const currentTime = performance.now();
+                const elapsed = (currentTime - startTime) / 1000;
+                console.log(`Executed ${steps} steps... (${elapsed.toFixed(2)} seconds elapsed)`);
+                progressShown = true;
+                
+                // Print current grid state every 100K steps
+                if (steps % 100000 === 0) {
+                    console.log("Current grid state:");
+                    const grid = this.toGrid();
+                    this.printGrid(grid);
+                }
+            }
+        }
+        
+        if (progressShown) {
+            console.log(`Completed in ${steps} steps`);
+        }
+        
+        if (steps >= maxSteps) {
+            console.log(`Warning: Reached maximum step limit (${maxSteps})`);
+            return false;
+        }
+        
+        return this.state === "accept";
+    }
+    
+    toGrid() {
+        // Convert main tape to 2D grid
+        const grid = [];
+        for (let i = 0; i < this.mainTape.length; i += this.gridSize) {
+            grid.push(this.mainTape.slice(i, i + this.gridSize));
+        }
+        return grid;
+    }
+    
+    isValidPlacement(grid, row, col, num) {
+        // Check if placing num at grid[row][col] is valid
+        // Check row
+        for (let x = 0; x < this.gridSize; x++) {
+            if (grid[row][x] === num) {
+                return false;
+            }
+        }
+        
+        // Check column
+        for (let x = 0; x < this.gridSize; x++) {
+            if (grid[x][col] === num) {
+                return false;
+            }
+        }
+        
+        // Check box (e.g., 3x3 for 9x9 grid)
+        const boxRow = row - row % this.boxSize;
+        const boxCol = col - col % this.boxSize;
+        for (let i = 0; i < this.boxSize; i++) {
+            for (let j = 0; j < this.boxSize; j++) {
+                if (grid[boxRow + i][boxCol + j] === num) {
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+    }
+    
+    printGrid(grid) {
+        // Print grid to console in a readable format
+        const size = grid.length;
+        
+        // Horizontal line
+        const hLine = "+" + "+".repeat(this.boxSize) + "+";
+        
+        for (let i = 0; i < size; i++) {
+            if (i % this.boxSize === 0) {
+                console.log(hLine);
+            }
+            
+            // Print row with box separators
+            let rowStr = "|";
+            for (let j = 0; j < size; j++) {
+                rowStr += " " + (grid[i][j] !== 0 ? grid[i][j] : " ");
+                if ((j + 1) % this.boxSize === 0) {
+                    rowStr += " |";
+                }
+            }
+            console.log(rowStr);
+        }
+        
+        console.log(hLine);
+    }
+}
+
+// Sample puzzles
+const puzzles = {
+    "easy": [
+        [5, 3, 0, 0, 7, 0, 0, 0, 0],
+        [6, 0, 0, 1, 9, 5, 0, 0, 0],
+        [0, 9, 8, 0, 0, 0, 0, 6, 0],
+        [8, 0, 0, 0, 6, 0, 0, 0, 3],
+        [4, 0, 0, 8, 0, 3, 0, 0, 1],
+        [7, 0, 0, 0, 2, 0, 0, 0, 6],
+        [0, 6, 0, 0, 0, 0, 2, 8, 0],
+        [0, 0, 0, 4, 1, 9, 0, 0, 5],
+        [0, 0, 0, 0, 8, 0, 0, 7, 9]
+    ],
+    "medium": [
+        [0, 0, 0, 2, 6, 0, 7, 0, 1],
+        [6, 8, 0, 0, 7, 0, 0, 9, 0],
+        [1, 9, 0, 0, 0, 4, 5, 0, 0],
+        [8, 2, 0, 1, 0, 0, 0, 4, 0],
+        [0, 0, 4, 6, 0, 2, 9, 0, 0],
+        [0, 5, 0, 0, 0, 3, 0, 2, 8],
+        [0, 0, 9, 3, 0, 0, 0, 7, 4],
+        [0, 4, 0, 0, 5, 0, 0, 3, 6],
+        [7, 0, 3, 0, 1, 8, 0, 0, 0]
+    ],
+    "hard": [
+        [9, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 3, 0, 8, 5],
+        [0, 0, 1, 0, 2, 0, 0, 0, 0],
+        [0, 0, 0, 5, 0, 7, 0, 0, 0],
+        [0, 0, 4, 0, 0, 0, 1, 0, 0],
+        [0, 9, 0, 0, 0, 0, 0, 0, 0],
+        [5, 0, 0, 0, 0, 0, 0, 7, 3],
+        [0, 0, 2, 0, 1, 0, 0, 0, 0],
+        [0, 0, 0, 0, 4, 0, 0, 0, 9]
+    ],
+    "expert": [
+        [0, 0, 5, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 8, 0, 0, 0, 0, 9],
+        [0, 0, 0, 3, 0, 0, 1, 0, 0],
+        [0, 2, 0, 0, 0, 6, 0, 0, 0],
+        [1, 0, 0, 9, 0, 4, 0, 0, 6],
+        [0, 0, 0, 1, 0, 0, 0, 5, 0],
+        [0, 0, 9, 0, 0, 7, 0, 0, 0],
+        [8, 0, 0, 0, 0, 1, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 9, 0, 0]
+    ]
+};
+
+// Utility functions
+function flattenGrid(grid) {
+    return grid.flat();
+}
+
+function createEmptyGrid(size) {
+    return Array(size).fill().map(() => Array(size).fill(0));
+}
+
+// Main simulator application
+class SudokuTMSimulator {
+    constructor() {
+        this.running = false;
+        this.delay = 500;  // ms between steps
+        this.initialGrid = null;
+        this.tm = new SudokuTuringMachine();
+        this.initialTape = [];
+    }
+    
+    initialize(puzzleKey) {
+        // Initialize the simulator with a puzzle
+        this.initialGrid = puzzles[puzzleKey];
+        this.tm.gridSize = this.initialGrid.length;
+        this.tm.boxSize = (this.tm.gridSize === 9) ? 3 : 2;
+        
+        // Flatten the grid for the TM tape
+        this.initialTape = flattenGrid(this.initialGrid);
+        
+        // Set up the TM
+        this.tm.setTape(this.initialTape);
+        
+        // Initialize UI
+        this.updateDisplay();
+        
+        return this.initialGrid;
+    }
+    
+    step() {
+        // Execute one step of the TM
+        if (!this.tm.hasHalted) {
+            this.tm.step();
+            this.updateDisplay();
+        }
+        return !this.tm.hasHalted;
+    }
+    
+    updateDisplay() {
+        // Update UI to match TM state - to be implemented by the UI layer
+        const grid = this.tm.toGrid();
+        const state = {
+            grid: grid,
+            state: this.tm.state,
+            headPos: this.tm.headPos,
+            debugInfo: this.tm.debugInfo,
+            btPosTape: this.tm.btPosTape,
+            btValTape: this.tm.btValTape,
+            hasHalted: this.tm.hasHalted
+        };
+        
+        // Trigger UI update by dispatching event
+        const event = new CustomEvent('tm-update', { detail: state });
+        document.dispatchEvent(event);
+        
+        return state;
+    }
+    
+    reset() {
+        // Reset the TM to initial state
+        this.running = false;
+        this.tm.setTape(this.initialTape);
+        this.updateDisplay();
+    }
+    
+    runContinuous() {
+        // Run the TM continuously with delay
+        if (this.running && !this.tm.hasHalted) {
+            this.tm.step();
+            this.updateDisplay();
+            setTimeout(() => this.runContinuous(), this.delay);
+        }
+    }
+    
+    toggleRun() {
+        // Toggle continuous running
+        this.running = !this.running;
+        if (this.running) {
+            this.runContinuous();
+            return "stop";
+        }
+        return "run";
+    }
+    
+    updateSpeed(value) {
+        // Convert slider value (0-100) to delay (1-1000ms)
+        this.delay = Math.max(1, Math.round(1000 - value * 9.9)); 
+        return this.delay;
+    }
+    
+    solveImmediately() {
+        // Solve puzzle immediately without animation
+        this.running = false;
+        
+        // Create a new TM to avoid modifying the current one's state
+        const solveTm = new SudokuTuringMachine();
+        solveTm.gridSize = this.tm.gridSize;
+        solveTm.boxSize = this.tm.boxSize;
+        solveTm.setTape(this.initialTape);
+        
+        const startTime = performance.now();
+        const success = solveTm.runToCompletion(1000000000);
+        const endTime = performance.now();
+        
+        if (success) {
+            // Get solution
+            this.tm.mainTape = [...solveTm.mainTape];
+            this.tm.state = "accept";
+            this.tm.hasHalted = true;
+            this.tm.debugInfo = `Solution found in ${((endTime - startTime) / 1000).toFixed(2)} seconds`;
+            
+            // Update display
+            this.updateDisplay();
+            
+            // Log solution
+            console.log("\n===== SUDOKU SOLUTION =====");
+            const grid = this.tm.toGrid();
+            this.tm.printGrid(grid);
+            
+            return true;
+        } else {
+            this.tm.debugInfo = `No solution found within step limit after ${((endTime - startTime) / 1000).toFixed(2)} seconds`;
+            this.updateDisplay();
+            return false;
+        }
+    }
+}
+
+// Initialize the application when the DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    // Create the simulator instance
+    window.sudokuSim = new SudokuTMSimulator();
+});
+// Add this code at the end of the script section to complete the UI functionality
+
+// Add this code to complete the UI functionality with main tape visualization
+
+// Initialize the application when the DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    // Create the simulator instance
+    window.sudokuSim = new SudokuTMSimulator();
+    
+    // Set up UI elements
+    const gridContainer = document.getElementById('sudoku-grid');
+    const stateElement = document.getElementById('tm-state');
+    const headPosElement = document.getElementById('head-pos');
+    const debugInfoElement = document.getElementById('debug-info');
+    const btTapesElement = document.getElementById('bt-tapes');
+    const svgElement = document.getElementById('state-diagram-svg');
+    
+    // Buttons
+    const stepButton = document.getElementById('step-button');
+    const runButton = document.getElementById('run-button');
+    const resetButton = document.getElementById('reset-button');
+    const solveButton = document.getElementById('solve-button');
+    const loadButton = document.getElementById('load-button');
+    const speedSlider = document.getElementById('speed-slider');
+    const puzzleSelect = document.getElementById('puzzle-select');
+    
+    // Create main tape container and add it to the page
+    const containerDiv = document.createElement('div');
+    containerDiv.className = 'main-tape-container';
+    containerDiv.innerHTML = `
+        <h2>Main Tape</h2>
+        <div class="main-tape" id="main-tape"></div>
+    `;
+    document.querySelector('.container').appendChild(containerDiv);
+    const mainTapeElement = containerDiv.querySelector('#main-tape');
+    
+    // Create grid cells
+    function createGridUI() {
+        gridContainer.innerHTML = '';
+        for (let i = 0; i < 9*9; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.dataset.index = i;
+            gridContainer.appendChild(cell);
+        }
+    }
+    
+    // Create main tape cells
+    function createMainTapeUI(tapeLength) {
+        mainTapeElement.innerHTML = '';
+        const visibleCells = Math.min(tapeLength, 20); // Show at most 20 cells
+        
+        for (let i = 0; i < visibleCells; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'tape-cell';
+            cell.dataset.index = i;
+            
+            // Add position indicator
+            const positionIndicator = document.createElement('div');
+            positionIndicator.className = 'tape-position';
+            positionIndicator.textContent = i;
+            cell.appendChild(positionIndicator);
+            
+            mainTapeElement.appendChild(cell);
+        }
+    }
+    
+    // Update the main tape display
+    function updateMainTape(mainTape, fixedTape, headPos) {
+    const visibleCells = 15; // Show a fixed number of cells
+    
+    // Calculate which portion of the tape to show
+    // Keep the head position fixed around the middle (position 7)
+    const fixedHeadDisplayPosition = 7;
+    const startIndex = Math.max(0, headPos - fixedHeadDisplayPosition);
+    const endIndex = Math.min(mainTape.length, startIndex + visibleCells);
+    
+    // Clear existing cells
+    mainTapeElement.innerHTML = '';
+    
+    // Create tape cells
+    for (let i = startIndex; i < endIndex; i++) {
+        const value = mainTape[i];
+        const isFixed = fixedTape[i] !== 0;
+        const isFilled = !isFixed && value !== 0;
+        const isHead = i === headPos;
+        
+        const cell = document.createElement('div');
+        cell.className = 'tape-cell';
+        if (isFixed) cell.classList.add('fixed');
+        if (isFilled) cell.classList.add('filled');
+        if (isHead) cell.classList.add('current-head');
+        
+        cell.textContent = value !== 0 ? value : '';
+        
+        // Add position indicator
+        const positionIndicator = document.createElement('div');
+        positionIndicator.className = 'tape-position';
+        positionIndicator.textContent = i;
+        cell.appendChild(positionIndicator);
+        
+        // Add head indicator if this is the current head position
+        if (isHead) {
+            const headIndicator = document.createElement('div');
+            headIndicator.className = 'tape-head-indicator';
+            headIndicator.innerHTML = '▼';
+            cell.appendChild(headIndicator);
+        }
+        
+        mainTapeElement.appendChild(cell);
+    }
+}
+    
+    // Update UI to match TM state
+    document.addEventListener('tm-update', (e) => {
+        const state = e.detail;
+        
+        // Update grid
+        const cells = gridContainer.querySelectorAll('.cell');
+        const flatGrid = state.grid.flat();
+        
+        cells.forEach((cell, index) => {
+            // Set cell content
+            cell.textContent = flatGrid[index] !== 0 ? flatGrid[index] : '';
+            
+            // Reset classes
+            cell.className = 'cell';
+            
+            // Mark fixed cells (from original puzzle)
+            if (sudokuSim.initialTape[index] !== 0) {
+                cell.classList.add('fixed');
+            } 
+            // Mark filled cells
+            else if (flatGrid[index] !== 0) {
+                cell.classList.add('filled');
+            }
+            
+            // Mark head position
+            if (index === state.headPos) {
+                cell.classList.add('current-head');
+            }
+        });
+        
+        // Update main tape
+        updateMainTape(
+            sudokuSim.tm.mainTape, 
+            sudokuSim.tm.fixedTape, 
+            sudokuSim.tm.headPos
+        );
+        
+        // Update state info
+        stateElement.textContent = state.state;
+        headPosElement.textContent = state.headPos;
+        debugInfoElement.textContent = state.debugInfo;
+        
+        // Update backtracking tapes
+        let btContent = '<strong>Backtracking Tapes:</strong><br>';
+        if (state.btPosTape.length > 0) {
+            btContent += 'Position tape: ' + state.btPosTape.join(', ') + '<br>';
+            btContent += 'Value tape: ' + state.btValTape.join(', ');
+        } else {
+            btContent += 'Empty';
+        }
+        btTapesElement.innerHTML = btContent;
+        
+        // Update state diagram
+        updateStateDiagram(svgElement, state.state);
+    });
+    
+    // Create state diagram
+    function updateStateDiagram(svg, currentState) {
+    // Define states and transitions
+    const states = [
+        { id: 'scan', x: 150, y: 100, label: 'Scan' },
+        { id: 'try_value', x: 350, y: 100, label: 'Try Value' },
+        { id: 'accept', x: 150, y: 220, label: 'Accept' },
+        { id: 'reject', x: 350, y: 220, label: 'Reject' }
+    ];
+    
+    const transitions = [
+        { from: 'scan', to: 'try_value', label: 'Empty cell', labelX: 250, labelY: 80 },
+        { from: 'scan', to: 'scan', label: 'Fixed/Filled cell', labelX: 150, labelY: 40 },
+        { from: 'try_value', to: 'scan', label: 'Valid value', labelX: 250, labelY: 125 },
+        { from: 'try_value', to: 'try_value', label: 'Try next value', labelX: 350, labelY: 40 },
+        { from: 'try_value', to: 'reject', label: 'No valid values', labelX: 400, labelY: 160 },
+        { from: 'scan', to: 'accept', label: 'End of tape', labelX: 100, labelY: 160 }
+    ];
+    
+    // Create SVG elements with proper viewBox
+    svg.setAttribute('viewBox', '0 0 500 300');
+    
+    // Create SVG content with arrowhead definition
+    let content = `
+        <defs>
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+                    refX="9" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+            </marker>
+        </defs>
+    `;
+    
+    // Create states
+    states.forEach(state => {
+        const isCurrentState = state.id === currentState;
+        content += `
+            <g>
+                <circle class="state-node ${isCurrentState ? 'current-state' : ''}" 
+                        cx="${state.x}" cy="${state.y}" r="30"
+                        fill="${isCurrentState ? '#FFD700' : '#87CEFA'}" 
+                        stroke="#000" stroke-width="2"></circle>
+                <text text-anchor="middle" x="${state.x}" y="${state.y + 5}" 
+                      font-family="Arial" font-weight="bold">${state.label}</text>
+            </g>
+        `;
+    });
+    
+    // Create transitions
+    transitions.forEach(transition => {
+        const fromState = states.find(s => s.id === transition.from);
+        const toState = states.find(s => s.id === transition.to);
+        
+        if (fromState && toState) {
+            // Self-loop
+            if (fromState.id === toState.id) {
+                content += `
+                    <path class="state-edge" d="M ${fromState.x},${fromState.y - 30} 
+                                               C ${fromState.x - 50},${fromState.y - 70} 
+                                                 ${fromState.x + 50},${fromState.y - 70} 
+                                                 ${fromState.x},${fromState.y - 30}"
+                          fill="none" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"></path>
+                    <text text-anchor="middle" x="${transition.labelX}" y="${transition.labelY}" 
+                          font-family="Arial" font-size="12">${transition.label}</text>
+                `;
+            } else if (fromState.y === toState.y) {
+                // Horizontal transition (Scan to Try Value and back)
+                if (fromState.x < toState.x) {
+                    // Left to right (Scan to Try Value)
+                    content += `
+                        <path class="state-edge" d="M ${fromState.x + 30},${fromState.y} 
+                                                   Q ${(fromState.x + toState.x) / 2},${fromState.y - 20} 
+                                                     ${toState.x - 30},${toState.y}"
+                              fill="none" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"></path>
+                    `;
+                } else {
+                    // Right to left (Try Value to Scan)
+                    content += `
+                        <path class="state-edge" d="M ${fromState.x - 30},${fromState.y} 
+                                                   Q ${(fromState.x + toState.x) / 2},${fromState.y + 20} 
+                                                     ${toState.x + 30},${toState.y}"
+                              fill="none" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"></path>
+                    `;
+                }
+                content += `
+                    <text text-anchor="middle" x="${transition.labelX}" y="${transition.labelY}" 
+                          font-family="Arial" font-size="12">${transition.label}</text>
+                `;
+            } else {
+                // Vertical transition (Scan to Accept or Try Value to Reject)
+                content += `
+                    <path class="state-edge" d="M ${fromState.x},${fromState.y + 30} 
+                                               Q ${fromState.x},${(fromState.y + toState.y) / 2} 
+                                                 ${fromState.x},${toState.y - 30}"
+                          fill="none" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"></path>
+                    <text text-anchor="middle" x="${transition.labelX}" y="${transition.labelY}" 
+                          font-family="Arial" font-size="12">${transition.label}</text>
+                `;
+            }
+        }
+    });
+    
+    svg.innerHTML = content;
+}
+    // Initialize UI with a puzzle
+    function initializeUI(puzzleKey) {
+        createGridUI();
+        const grid = sudokuSim.initialize(puzzleKey);
+        createMainTapeUI(sudokuSim.initialTape.length);
+        updateMainTape(sudokuSim.initialTape, sudokuSim.initialTape, 0);
+        updateStateDiagram(svgElement, 'scan');
+    }
+    
+    // Add event listeners
+    stepButton.addEventListener('click', () => {
+        sudokuSim.step();
+    });
+    
+    runButton.addEventListener('click', () => {
+        const action = sudokuSim.toggleRun();
+        runButton.textContent = action === 'stop' ? 'Stop' : 'Run';
+    });
+    
+    resetButton.addEventListener('click', () => {
+        sudokuSim.reset();
+        runButton.textContent = 'Run';
+    });
+    
+    solveButton.addEventListener('click', () => {
+        sudokuSim.solveImmediately();
+        runButton.textContent = 'Run';
+    });
+    
+    loadButton.addEventListener('click', () => {
+        initializeUI(puzzleSelect.value);
+        runButton.textContent = 'Run';
+    });
+    
+    speedSlider.addEventListener('input', () => {
+        sudokuSim.updateSpeed(parseInt(speedSlider.value));
+    });
+    
+    // Initialize with default puzzle
+    initializeUI('easy');
+});
+</script>
