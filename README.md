@@ -1,12 +1,17 @@
-# Sudoku Multi-Tape Turing Machine Simulator
+# CS3005 Sudoku Multi-Tape Turing Machine Simulator
+
+## Course: CS3005 Theory of Computation/Automata
+## Instructor & Project Supervisor: Dr. Nasir Uddin
+
+## Overview
 
 A web-based interactive simulator that demonstrates how a **Multi-Tape Turing Machine** can solve **Sudoku puzzles**, built for a Theory of Computation/Automata (TOC/TOA) course project.
 
-## 📋 Project Overview
+## Project Overview
 
 This project visualizes a theoretical Turing Machine with **four tapes** that implements a backtracking algorithm to solve standard 9×9 Sudoku puzzles. The simulator breaks down the abstract computational process into step-by-step visualizations, making automata theory concepts tangible and interactive.
 
-## 🎯 Features
+## Features
 
 ### Core Simulation
 - **Multi-Tape TM Implementation**: Simulates a Turing Machine with four tapes:
@@ -34,7 +39,7 @@ This project visualizes a theoretical Turing Machine with **four tapes** that im
 - **Puzzle Selection**: Choose from four difficulty levels (Easy, Medium, Hard, Expert)
 - **Speed Control**: Adjust simulation speed via slider
 
-## 🧩 Puzzle Library
+## Puzzle Library
 
 The simulator includes four sample Sudoku puzzles:
 - **Easy**: Standard beginner puzzle with many given numbers
@@ -42,7 +47,7 @@ The simulator includes four sample Sudoku puzzles:
 - **Hard**: Challenging puzzle requiring advanced techniques
 - **Expert**: Very difficult puzzle with minimal clues
 
-## 🏗️ Technical Implementation
+## Technical Implementation
 
 ### Architecture
 - **Frontend**: Pure HTML, CSS, and JavaScript (no external dependencies)
@@ -56,7 +61,7 @@ The simulator includes four sample Sudoku puzzles:
 3. **Event-Driven UI**: Custom events synchronize TM state with visual elements
 4. **Responsive Design**: Works on desktop and mobile devices
 
-## 📚 Educational Value
+## Educational Value
 
 This project demonstrates several key TOC/TOA concepts:
 - **Multi-Tape Turing Machines**: How additional tapes simplify complex computations
@@ -65,7 +70,7 @@ This project demonstrates several key TOC/TOA concepts:
 - **Backtracking Algorithms**: Implementing recursive algorithms iteratively
 - **Tape Encoding**: Representing 2D structures in 1D tape format
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Live Demo
 Open `app.html` directly in any modern web browser.
@@ -86,7 +91,7 @@ Open `app.html` directly in any modern web browser.
 - Safari 11+
 - Edge 79+
 
-## 🧠 Algorithm Overview
+## Algorithm Overview
 
 The TM implements a backtracking algorithm:
 1. **Scan Phase**: Move right along tape, skipping fixed cells
@@ -95,8 +100,7 @@ The TM implements a backtracking algorithm:
 4. **Backtracking**: If no valid values, retreat to previous decision point
 5. **Termination**: Accept when reaching end of tape; reject if backtracking fails
 
-## 📁 Project Structure
-
+## Project Structure
 ```
 app.html                    # Main application file (all-in-one HTML)
 ├── <style>                 # All CSS styles
@@ -107,29 +111,3 @@ app.html                    # Main application file (all-in-one HTML)
 │   └── Puzzle Data         # Four sample Sudoku puzzles
 └── <body>                  # HTML structure and UI elements
 ```
-
-## 👥 Team & Course
-
-**Project Type**: Theory of Computation/Automata (TOC/TOA) Course Project  
-**Purpose**: Demonstrate practical implementation of multi-tape Turing Machines
-
-## 🔮 Future Enhancements
-
-Potential extensions for this project:
-- Add custom puzzle input
-- Implement different Sudoku solving algorithms
-- Add step-by-step explanation panel
-- Include complexity analysis display
-- Export/import TM configurations
-- Add more puzzle variants (6×6, 12×12, etc.)
-
-## 📝 Notes
-
-- The TM implementation is **theoretical** - real computers don't execute code this way
-- The "Solve Immediately" button uses the same algorithm but without visualization delays
-- All puzzles have known solutions; the TM will find them or prove unsolvability
-- The simulator is educational, not optimized for speed
-
----
-
-*This project makes abstract automata theory concepts concrete through interactive visualization of a multi-tape Turing Machine solving a familiar puzzle.*
