@@ -1,7 +1,7 @@
-# CS3005 Sudoku Multi-Tape Turing Machine Simulator
+# Sudoku Multi-Tape Turing Machine Simulator
 
 ## Course: CS3005 Theory of Computation/Automata
-## Instructor & Project Supervisor: Dr. Nasir Uddin
+## Instructor: Dr. Nasir Uddin
 
 ## Overview
 
